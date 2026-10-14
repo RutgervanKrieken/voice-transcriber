@@ -12,9 +12,25 @@ python3 serve.py 8080   # like http.server, but without caching
 
 Open http://localhost:8080 in Edge or Chrome. Microphone access requires `localhost` or https.
 
-- **small** model (~250 MB): works on any computer (CPU).
-- **large** model (~1 GB): better accuracy, needs WebGPU (recent Edge/Chrome on a decent GPU).
+- **groot** (large, default, 1.6 GB): best accuracy, needs WebGPU with half precision
+  (`shader-f16`). On an M1 Pro a 1.5 hour interview took 13 minutes. If the computer lacks
+  this support, the app selects **klein** automatically and greys out groot.
+- **klein** (small, 250–600 MB): works on any computer (GPU or CPU).
 - Models download on first use and are cached by the browser.
+
+## Buttons
+
+- **Opnemen / Stoppen**: record from the microphone.
+- **Bestand uploaden…**: pick an audio or video file.
+- **Uitschrijven**: transcribe. While running it is replaced by **Stoppen**, which stops at
+  once; finished ~5 minute parts are kept, and Uitschrijven or Verdergaan continues from there.
+  The model reloads from the browser cache after a stop (no new download).
+- **Kopiëren**, **.txt downloaden**, **Audio downloaden**: export the text or audio.
+- **Opslaan in SharePoint**: placeholder, disabled until the SharePoint version.
+- **Wissen**: clears the screen (audio, text, Copilot steps) for a new recording. Nothing is
+  deleted; the item stays under "Bewaard in deze browser". Disabled while recording or transcribing.
+- **Samenvatten met Copilot**: see Summaries below.
+- History (**Openen**, **Verdergaan**, **Uitschrijven**, **Verwijderen**): saved items in this browser.
 
 ## Files
 
