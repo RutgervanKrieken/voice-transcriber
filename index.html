@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spraak naar tekst</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1b1f24; --muted: #5d6670;
+    --border: #dde1e6; --accent: #0f6cbd; --accent-text: #ffffff;
+    --rec: #c4314b; --ok: #107c10; --warn-bg: #fff4ce; --warn-text: #5c4400;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181c; --surface: #1f2328; --text: #e8eaed; --muted: #9aa3ad;
+      --border: #343a42; --accent: #479ef5; --accent-text: #0b1520;
+      --rec: #f1707b; --ok: #54b054; --warn-bg: #3d3000; --warn-text: #ffe28a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button, .btn {
+    font: inherit; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  }
+  button:hover:not(:disabled), .btn:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button.rec { background: var(--rec); color: #fff; border-color: var(--rec); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .recording .dot { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .timer { font-variant-numeric: tabular-nums; font-size: 20px; min-width: 64px; }
+  .meter { flex: 1; min-width: 120px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .meter > div { height: 100%; width: 0; background: var(--ok); transition: width .08s; }
+  audio { width: 100%; margin-top: 14px; }
+  select, label { font: inherit; color: var(--text); }
+  select { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+  input[type=file] { display: none; }
+  .status { color: var(--muted); font-size: 14px; margin-top: 12px; min-height: 1.5em; }
+  .status.error { color: var(--rec); }
+  progress { width: 100%; height: 6px; margin-top: 8px; accent-color: var(--accent); }
+  textarea {
+    width: 100%; min-height: 260px; resize: vertical; padding: 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit;
+  }
+  .note { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .steps { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--accent); border-radius: 8px; }
+  .steps ol { margin: 0; padding-left: 20px; }
+  .steps li { margin: 4px 0; }
+  .steps a { color: var(--accent); font-weight: 600; }
+  kbd { font: 12px ui-monospace, monospace; padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); }
+  details { margin-top: 10px; font-size: 14px; color: var(--muted); }
+  details textarea { min-height: 120px; margin-top: 8px; font-size: 13px; }
+  .progress-text { font-variant-numeric: tabular-nums; }
+  .banner { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .parts { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .parts button.done { border-color: var(--ok); color: var(--ok); }
+  .history { list-style: none; margin: 0; padding: 0; }
+  .history li { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
+  .history li:first-child { border-top: 0; padding-top: 0; }
+  .history .name { flex: 1; min-width: 180px; overflow-wrap: anywhere; }
+  .history .meta { display: block; color: var(--muted); font-size: 13px; }
+  .history button { padding: 5px 10px; font-size: 14px; }
+  .empty { color: var(--muted); font-size: 14px; margin: 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Spraak naar tekst</h1>
+  <p class="sub">Neem audio op of upload een bestand en zet het om naar tekst. Alles gebeurt op deze computer; de audio wordt nergens naartoe gestuurd.</p>
+
+  <div class="note banner" id="resumeBanner" hidden>
+    <span id="resumeText"></span>
+    <button id="resumeBtn" class="primary">Verdergaan</button>
+  </div>
+
+  <section class="card">
+    <h2>1 · Audio</h2>
+    <div class="row">
+      <button id="recBtn" class="rec"><span class="dot"></span><span id="recLabel">Opnemen</span></button>
+      <span class="timer" id="timer">0:00</span>
+      <div class="meter"><div id="level"></div></div>
+      <label class="btn" for="fileInput">Bestand uploaden…</label>
+      <input type="file" id="fileInput" accept="audio/*,video/*">
+    </div>
+    <audio id="player" controls hidden></audio>
+  </section>
+
+  <section class="card">
+    <h2>2 · Uitschrijven</h2>
+    <div class="row">
+      <select id="model">
+        <option value="turbo" selected>Model: groot (beste kwaliteit, vereist WebGPU, 1,6 GB)</option>
+        <option value="small">Model: klein (elke computer, 250–600 MB)</option>
+      </select>
+      <button id="transcribeBtn" class="primary" disabled>Uitschrijven</button>
+      <button id="stopBtn" hidden>Stoppen</button>
+    </div>
+    <progress id="progress" hidden></progress>
+    <div class="status progress-text" id="status">Het model wordt de eerste keer gedownload en daarna bewaard in de browser.</div>
+  </section>
+
+  <section class="card">
+    <h2>3 · Tekst</h2>
+    <div class="row" style="margin-bottom:10px">
+      <label><input type="checkbox" id="timestamps"> Tijdcodes</label>
+      <label><input type="checkbox" id="clean" checked> Herhalingen verwijderen</label>
+    </div>
+    <textarea id="transcript" placeholder="Hier verschijnt de tekst. Je kunt hem aanpassen; aanpassingen worden automatisch bewaard."></textarea>
+    <div class="row" style="margin-top:12px">
+      <button id="copyBtn">Kopiëren</button>
+      <button id="txtBtn">.txt downloaden</button>
+      <button id="audioBtn" disabled>Audio downloaden</button>
+      <button id="spBtn" disabled title="Beschikbaar zodra de app op SharePoint draait">Opslaan in SharePoint</button>
+      <button id="clearBtn" title="Scherm leegmaken voor een nieuwe opname. Bewaarde opnames blijven staan.">Wissen</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>4 · Samenvatting</h2>
+    <div class="row">
+      <select id="summaryType">
+        <option value="meeting">Notulen (besluiten, actiepunten)</option>
+        <option value="short">Korte samenvatting (5 zinnen)</option>
+        <option value="interview">Gesprek / interview</option>
+      </select>
+      <button id="copilotBtn" class="primary">Samenvatten met Copilot</button>
+    </div>
+    <div class="status" id="copilotStatus">Kopieert de tekst met instructies, zodat je die in Copilot Chat kunt plakken.</div>
+    <div class="steps" id="copilotSteps" hidden></div>
+  </section>
+
+  <section class="card">
+    <h2>Bewaard in deze browser</h2>
+    <ul class="history" id="history"></ul>
+    <p class="empty" id="historyEmpty">Nog niets bewaard. Opnames en tekst worden automatisch bewaard terwijl je werkt.</p>
+  </section>
+
+  <p class="note" id="secureNote" hidden>De microfoon werkt alleen via https of localhost. Open deze pagina via een lokale server (zie README).</p>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
