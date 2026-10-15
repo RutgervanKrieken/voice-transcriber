@@ -3,6 +3,13 @@
 Record or upload audio, transcribe Dutch speech locally in the browser with Whisper
 (transformers.js), edit, and download the text and audio. Audio never leaves the device.
 
+## Use it online
+
+**https://rutgervankrieken.github.io/voice-transcriber/** — hosted on GitHub Pages, no
+install needed. Note: this repo and the hosted page are public, so anyone with the link can
+open the app (no login). No audio or transcript data is exposed by that, since everything
+still runs in your own browser and nothing is uploaded anywhere.
+
 ## Run locally
 
 **Mac/Linux:**
