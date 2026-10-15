@@ -5,12 +5,21 @@ Record or upload audio, transcribe Dutch speech locally in the browser with Whis
 
 ## Run locally
 
+**Mac/Linux:**
+
 ```sh
 cd voice-transcriber
 python3 serve.py 8080   # like http.server, but without caching
 ```
 
+**Windows:** double-click `run.bat`. It finds Python if already installed, otherwise
+downloads a small portable copy into `.python-embed` (no admin rights needed), starts the
+server, and opens the page automatically. Close the "Voice Transcriber Server" console
+window to stop it.
+
 Open http://localhost:8080 in Edge or Chrome. Microphone access requires `localhost` or https.
+An internet connection is needed the first time, to download the Whisper model and the
+transformers.js library; after that both are cached by the browser.
 
 - **groot** (large, default, 1.6 GB): best accuracy, needs WebGPU with half precision
   (`shader-f16`). On an M1 Pro a 1.5 hour interview took 13 minutes. If the computer lacks
