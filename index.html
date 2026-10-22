@@ -104,6 +104,11 @@
   <section class="card">
     <h2>2 · Uitschrijven</h2>
     <div class="row">
+      <label><input type="radio" name="engine" id="engineBrowser" value="browser" checked> In de browser</label>
+      <label><input type="radio" name="engine" id="engineBackend" value="backend"> Lokale server</label>
+      <input type="text" id="backendUrl" placeholder="http://localhost:8000" value="http://localhost:8000" hidden>
+    </div>
+    <div class="row">
       <select id="model">
         <option value="turbo" selected>Model: groot (beste kwaliteit, vereist WebGPU, 1,6 GB)</option>
         <option value="small">Model: klein (elke computer, 250–600 MB)</option>

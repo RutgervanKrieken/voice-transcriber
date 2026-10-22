@@ -7,6 +7,7 @@ const $ = (id) => document.getElementById(id);
 const els = {
   recBtn: $('recBtn'), recLabel: $('recLabel'), timer: $('timer'), level: $('level'),
   fileInput: $('fileInput'), player: $('player'), model: $('model'),
+  engineBrowser: $('engineBrowser'), engineBackend: $('engineBackend'), backendUrl: $('backendUrl'),
   transcribeBtn: $('transcribeBtn'), progress: $('progress'), status: $('status'),
   timestamps: $('timestamps'), clean: $('clean'), transcript: $('transcript'),
   copyBtn: $('copyBtn'), txtBtn: $('txtBtn'), audioBtn: $('audioBtn'),
@@ -41,6 +42,13 @@ if (!window.isSecureContext) els.secureNote.hidden = false;
   els.model.value = 'small';
 })();
 navigator.storage?.persist?.().catch(() => {});
+
+function onEngineChange() {
+  const backend = els.engineBackend.checked;
+  els.model.hidden = backend;
+  els.backendUrl.hidden = !backend;
+}
+els.engineBrowser.onchange = els.engineBackend.onchange = onEngineChange;
 
 // ---------- Helpers ----------
 function setStatus(text, isError = false) {
@@ -296,6 +304,20 @@ els.stopBtn.onclick = () => {
 function transcribeSegment(start, end, model) {
   partial = '';
   const audio = int16ToFloat(pcm.subarray(start, end));
+  if (els.engineBackend.checked) {
+    const url = els.backendUrl.value.replace(/\/$/, '');
+    return fetch(`${url}/transcribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream', 'X-Sample-Rate': String(SR) },
+      body: audio.buffer,
+    }).then(async (r) => {
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.error || `serverfout (${r.status})`);
+      }
+      return r.json();
+    });
+  }
   const windows = planWindows(pcm, start, end).map((w) => ({ s: w.start - start, e: w.end - start }));
   return new Promise((resolve, reject) => {
     pending = { resolve, reject };
@@ -317,6 +339,15 @@ async function startTranscription() {
   keepAwake(true);
   const runStart = performance.now();
   try {
+    if (els.engineBackend.checked) {
+      const url = els.backendUrl.value.replace(/\/$/, '');
+      try {
+        const r = await fetch(`${url}/health`);
+        if (!r.ok) throw new Error();
+      } catch {
+        throw new Error(`Kan de lokale server niet bereiken op ${url}. Controleer of deze draait.`);
+      }
+    }
     if (!job) {
       job = newJob(audioBlob.name ? audioBlob.name.replace(/\.[^.]+$/, '') : `opname-${stamp()}`);
       job.file = audioBlob.name ? { name: audioBlob.name, size: audioBlob.size } : null;
@@ -353,7 +384,7 @@ async function startTranscription() {
       const eta = doneThisRun > 0
         ? ` · nog ${fmtEta((workSec / doneThisRun) * (job.duration - doneSec))}`
         : i === job.segDone ? ' · resterende tijd wordt berekend…' : '';
-      const where = device ? ` op ${device}` : '';
+      const where = els.engineBackend.checked ? ' op de lokale server' : device ? ` op ${device}` : '';
       setStatus(`Bezig met uitschrijven${where}… ${pct}% · deel ${i + 1} van ${segs.length}${eta}`);
 
       const segStart = performance.now();

@@ -1,7 +1,9 @@
 # Voice Transcriber (prototype)
 
 Record or upload audio, transcribe Dutch speech locally in the browser with Whisper
-(transformers.js), edit, and download the text and audio. Audio never leaves the device.
+(transformers.js), edit, and download the text and audio. By default audio never leaves
+the device — there's also an experimental opt-in "Lokale server" mode that sends audio
+to a server on your own network instead (see [Lokale server](#lokale-server-experimenteel)).
 
 ## Use it online
 
@@ -27,6 +29,24 @@ window to stop it.
 Open http://localhost:8080 in Edge or Chrome. Microphone access requires `localhost` or https.
 An internet connection is needed the first time, to download the Whisper model and the
 transformers.js library; after that both are cached by the browser.
+
+## Lokale server (experimenteel)
+
+Naast de twee in-browser modellen (groot/klein) is er een optionele "Lokale server"
+modus: de app stuurt audio dan naar een eigen Python-server die een Dutch Whisper
+fine-tune (via MLX) draait, in plaats van alles in de browser te doen. Bedoeld om nu op
+een gewone Mac te testen en straks ongewijzigd op een Mac mini te draaien. Setup en
+achtergrond staan in [`backend/README.md`](backend/README.md). Kort:
+
+```sh
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install mlx-whisper numpy
+python3 server.py
+```
+
+Kies daarna in de app bij "2 · Uitschrijven" de optie "Lokale server" en vul de URL in
+(standaard `http://localhost:8000`).
 
 - **groot** (large, default, 1.6 GB): best accuracy, needs WebGPU with half precision
   (`shader-f16`). On an M1 Pro a 1.5 hour interview took 13 minutes. If the computer lacks
